@@ -110,6 +110,7 @@ extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
         let data = [kId: "", kContent: "", kError: error.localizedDescription, kStatus: "error"]
         resulter?(data)
         disableNFC()
+        session.invalidate()
     }
     
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
@@ -126,6 +127,7 @@ extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
                 self.sendNfcEvent(data: data);
                 self.readResult?(data)
                 self.readResult=nil
+                session.invalidate()
             }
         }
         //disableNFC()
