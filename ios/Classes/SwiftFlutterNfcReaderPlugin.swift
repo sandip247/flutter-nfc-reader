@@ -102,8 +102,17 @@ extension SwiftFlutterNfcReaderPlugin {
 // MARK: - NFCDelegate
 @available(iOS 13.0, *)
 extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
-    public func readerSession(_ session: NFCNDEFReaderSession, didDetect tags: [NFCNDEFTag]) {
-        // end package
+    public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
+        
+    }
+    public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        print(error.localizedDescription)
+        let data = [kId: "", kContent: "", kError: error.localizedDescription, kStatus: "error"]
+        resulter?(data)
+        disableNFC()
+    }
+    
+    public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
         var uid = ""
         if case let NFCTag.miFare(miFare) = tags.first! {
             session.connect(to: tags.first!) { (error: Error?) in
@@ -113,26 +122,18 @@ extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
                     byteData.forEach {
                         uid.append(String($0, radix: 16))
                     }
-                let data = [kId: uid, kContent: "", kError: "", kStatus: "reading"]
+                let data = [self.kId: uid, self.kContent: "", self.kError: "", self.kStatus: "reading"]
                 self.sendNfcEvent(data: data);
                 self.readResult?(data)
                 self.readResult=nil
             }
         }
-        
-        
-        
         //disableNFC()
     }
-    public func readerSessionDidBecomeActive(_ session: NFCNDEFReaderSession) {
-        
-    }
-    public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        print(error.localizedDescription)
-        let data = [kId: "", kContent: "", kError: error.localizedDescription, kStatus: "error"]
-        resulter?(data)
-        disableNFC()
-    }
+    
+    
+    
+    
 }
 
 /*
@@ -218,3 +219,4 @@ extension SwiftFlutterNfcReaderPlugin: FlutterStreamHandler {
         return nil
     }
 }
+
