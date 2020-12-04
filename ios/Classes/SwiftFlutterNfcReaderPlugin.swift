@@ -3,10 +3,10 @@ import Foundation
 import CoreNFC
 import VYNFCKit
 
-@available(iOS 11.0, *)
+@available(iOS 13.0, *)
 public class SwiftFlutterNfcReaderPlugin: NSObject, FlutterPlugin {
     
-    fileprivate var nfcSession: NFCNDEFReaderSession? = nil
+    fileprivate var nfcSession: NFCTagReaderSession? = nil
     fileprivate var instruction: String? = nil
     fileprivate var resulter: FlutterResult? = nil
     fileprivate var readResult: FlutterResult? = nil
@@ -52,22 +52,34 @@ public class SwiftFlutterNfcReaderPlugin: NSObject, FlutterPlugin {
 }
 
 // MARK: - NFC Actions
-@available(iOS 11.0, *)
+@available(iOS 13.0, *)
 extension SwiftFlutterNfcReaderPlugin {
     func activateNFC(_ instruction: String?) {
         print("activate")
         
-        nfcSession = NFCNDEFReaderSession(delegate: self, queue: DispatchQueue(label: "queueName", attributes: .concurrent), invalidateAfterFirstRead: true)
+        nfcSession = NFCTagReaderSession(pollingOption: .iso14443, delegate: self)
+               // then setup a new session
+               if let instruction = instruction {
+                   nfcSession?.alertMessage = instruction
+               }
+               
+               // start
+               if let nfcSession = nfcSession {
+                   nfcSession.begin()
+               }
         
-        // then setup a new session
-        if let instruction = instruction {
-            nfcSession?.alertMessage = instruction
-        }
         
-        // start
-        if let nfcSession = nfcSession {
-            nfcSession.begin()
-        }
+//        nfcSession = NFCNDEFReaderSession(delegate: self, queue: DispatchQueue(label: "queueName", attributes: .concurrent), invalidateAfterFirstRead: true)
+//
+//        // then setup a new session
+//        if let instruction = instruction {
+//            nfcSession?.alertMessage = instruction
+//        }
+//
+//        // start
+//        if let nfcSession = nfcSession {
+//            nfcSession.begin()
+//        }
         
     }
     
@@ -88,7 +100,44 @@ extension SwiftFlutterNfcReaderPlugin {
 }
 
 // MARK: - NFCDelegate
-@available(iOS 11.0, *)
+@available(iOS 13.0, *)
+extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
+    public func readerSession(_ session: NFCNDEFReaderSession, didDetect tags: [NFCNDEFTag]) {
+        // end package
+        var uid = ""
+        if case let NFCTag.miFare(miFare) = tags.first! {
+            session.connect(to: tags.first!) { (error: Error?) in
+                
+                    var byteData = [UInt8]()
+                    miFare.identifier.withUnsafeBytes { byteData.append(contentsOf: $0) }
+                    byteData.forEach {
+                        uid.append(String($0, radix: 16))
+                    }
+                let data = [kId: uid, kContent: "", kError: "", kStatus: "reading"]
+                self.sendNfcEvent(data: data);
+                self.readResult?(data)
+                self.readResult=nil
+            }
+        }
+        
+        
+        
+        //disableNFC()
+    }
+    public func readerSessionDidBecomeActive(_ session: NFCNDEFReaderSession) {
+        
+    }
+    public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        print(error.localizedDescription)
+        let data = [kId: "", kContent: "", kError: error.localizedDescription, kStatus: "error"]
+        resulter?(data)
+        disableNFC()
+    }
+}
+
+/*
+// MARK: - NFCDelegate
+@available(iOS 13.0, *)
 extension SwiftFlutterNfcReaderPlugin : NFCNDEFReaderSessionDelegate {
     
     public func readerSession(_ session: NFCNDEFReaderSession, didDetectNDEFs messages: [NFCNDEFMessage]) {
@@ -156,8 +205,8 @@ extension SwiftFlutterNfcReaderPlugin : NFCNDEFReaderSessionDelegate {
     }
     
 }
-
-@available(iOS 11.0, *)
+*/
+@available(iOS 13.0, *)
 extension SwiftFlutterNfcReaderPlugin: FlutterStreamHandler {
     public func onCancel(withArguments arguments: Any?) -> FlutterError? {
         eventSink = nil
