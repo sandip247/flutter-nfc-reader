@@ -105,9 +105,14 @@ class FlutterNfcReader {
     return result;
   }
   static Future<NFCAvailability> checkNFCAvailability() async {
-    var version =  int.parse(Platform.operatingSystemVersion.split('.').first);
-    if(Platform.isIOS && version < 13){
-      return NFCAvailability.not_supported;
+
+    if(Platform.isIOS ){
+      var version = int.parse(Platform.operatingSystemVersion
+          .split('.')
+          .first);
+      if(version < 13) {
+        return NFCAvailability.not_supported;
+      }
     }
     var availability = "NFCAvailability.${await _channel.invokeMethod<String>("NfcAvailable")}";
     return NFCAvailability.values.firstWhere((item) => item.toString() == availability);
