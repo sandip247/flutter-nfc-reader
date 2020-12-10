@@ -107,9 +107,10 @@ extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
     }
     public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
         print(error.localizedDescription)
-        let data = [kId: "", kContent: "", kError: error.localizedDescription, kStatus: "error"]
-        resulter?(data)
-        disableNFC()
+        let data = [kId: "Cancel", kContent: "", kError: error.localizedDescription, kStatus: "error"]
+        self.sendNfcEvent(data: data);
+        self.readResult?(data)
+        self.readResult=nil
         session.invalidate()
     }
     
