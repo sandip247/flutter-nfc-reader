@@ -115,16 +115,18 @@ extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
     }
     
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
-        var uid = ""
+        //var uid = ""
         if case let NFCTag.miFare(miFare) = tags.first! {
             session.connect(to: tags.first!) { (error: Error?) in
                 
-                    var byteData = [UInt8]()
-                    miFare.identifier.withUnsafeBytes { byteData.append(contentsOf: $0) }
-                    byteData.forEach {
-                        uid.append(String($0, radix: 16))
-                    }
-                let data = [self.kId: uid, self.kContent: "", self.kError: "", self.kStatus: "reading"]
+                let tagUID = miFare.identifier.map{String(format: "%.2hhx", $0)}.joined()
+                
+//                    var byteData = [UInt8]()
+//                    miFare.identifier.withUnsafeBytes { byteData.append(contentsOf: $0) }
+//                    byteData.forEach {
+//                        uid.append(String($0, radix: 16))
+//                    }
+                let data = [self.kId: tagUID, self.kContent: "", self.kError: "", self.kStatus: "reading"]
                 self.sendNfcEvent(data: data);
                 self.readResult?(data)
                 self.readResult=nil
